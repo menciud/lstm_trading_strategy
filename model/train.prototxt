@@ -1,0 +1,139 @@
+layer {
+  name: "Python1"
+  type: "Python"
+  top: "Python1"
+  top: "Python2"
+  top: "Python3"
+  python_param {
+    module: "read_data"
+    layer: "input_layer"
+    param_str: "{\'crop_size_x\': 64, \'crop_size_y\': 64, \'test_batches\': 25, \'train_batches\': 25, \'train_data_name\': \'train_data_patch\', \'test_data_name\': \'test_data_patch\', \'train_pack_nums\': 1, \'data_dir\': \'data/\', \'test_pack_nums\': 1, \'split\': \'train\'}"
+  }
+}
+layer {
+  name: "InnerProduct1"
+  type: "InnerProduct"
+  bottom: "Python1"
+  top: "InnerProduct1"
+  inner_product_param {
+    num_output: 32
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "ReLU1"
+  type: "ReLU"
+  bottom: "InnerProduct1"
+  top: "InnerProduct1"
+}
+layer {
+  name: "InnerProduct2"
+  type: "InnerProduct"
+  bottom: "InnerProduct1"
+  top: "InnerProduct2"
+  inner_product_param {
+    num_output: 32
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+  }
+}
+layer {
+  name: "ReLU2"
+  type: "ReLU"
+  bottom: "InnerProduct2"
+  top: "InnerProduct2"
+}
+layer {
+  name: "Reshape1"
+  type: "Reshape"
+  bottom: "InnerProduct2"
+  top: "Reshape1"
+  reshape_param {
+    shape {
+      dim: 10
+      dim: 25
+      dim: 32
+    }
+  }
+}
+layer {
+  name: "Reshape2"
+  type: "Reshape"
+  bottom: "Python3"
+  top: "Reshape2"
+  reshape_param {
+    shape {
+      dim: 10
+      dim: 25
+    }
+  }
+}
+layer {
+  name: "LSTM1"
+  type: "LSTM"
+  bottom: "Reshape1"
+  bottom: "Reshape2"
+  top: "LSTM1"
+  recurrent_param {
+    num_output: 32
+    weight_filler {
+      type: "uniform"
+      min: -0.01
+      max: 0.01
+    }
+    bias_filler {
+      type: "constant"
+      value: 0
+    }
+  }
+}
+layer {
+  name: "InnerProduct3"
+  type: "InnerProduct"
+  bottom: "LSTM1"
+  top: "InnerProduct3"
+  inner_product_param {
+    num_output: 1
+    weight_filler {
+      type: "xavier"
+    }
+    bias_filler {
+      type: "constant"
+    }
+    axis: 2
+  }
+}
+layer {
+  name: "Reshape3"
+  type: "Reshape"
+  bottom: "Python2"
+  top: "Reshape3"
+  reshape_param {
+    shape {
+      dim: 10
+      dim: 25
+    }
+  }
+}
+layer {
+  name: "Python4"
+  type: "Python"
+  bottom: "InnerProduct3"
+  bottom: "Reshape3"
+  top: "Python4"
+  loss_weight: 1
+  python_param {
+    module: "pyloss"
+    layer: "EuclideanLossLayer"
+    param_str: "{}"
+  }
+}
